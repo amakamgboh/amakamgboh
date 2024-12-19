@@ -1,0 +1,78 @@
+---
+title: "APE GDPH Data"
+author: "Amaka Mgboh"
+date: "2024-12-13"
+output: pdf_document
+---
+```{r}
+install.packages("readxl")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("ggplot2")
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Read the file and extract all sheets
+data <- read_excel("Georgia_DPH_PUBLIC_Vaccination_Public_Data_in_Excel.xlsx")
+sheet_names <- excel_sheets("Georgia_DPH_PUBLIC_Vaccination_Public_Data_in_Excel.xlsx")
+
+all_sheets <- lapply(sheet_names, function(sheet) {
+  read_excel("Georgia_DPH_PUBLIC_Vaccination_Public_Data_in_Excel.xlsx", sheet = sheet)
+})
+names(all_sheets) <- sheet_names
+
+# Analyze vaccination percentages across age groups
+if ("AGE_BY_COUNTY" %in% names(all_sheets)) {
+  age_data <- all_sheets[["AGE_BY_COUNTY"]]
+  
+  # Ensure relevant columns exist
+  if (all(c("PCTCUMPCVAX", "PCTCUMPVAX", "AGE") %in% names(age_data))) {
+    # Convert relevant columns to numeric if necessary
+    age_data <- age_data %>%
+      mutate(
+        PCTCUMPCVAX = as.numeric(PCTCUMPCVAX),
+        PCTCUMPVAX = as.numeric(PCTCUMPVAX)
+      )
+    
+    # Summarize data by AGE group
+    age_summary <- age_data %>%
+      group_by(AGE) %>%
+      summarize(
+        Mean_PCTCUMPCVAX = mean(PCTCUMPCVAX, na.rm = TRUE),
+        Mean_PCTCUMPVAX = mean(PCTCUMPVAX, na.rm = TRUE)
+      )
+    
+    # Reshape data for plotting
+    age_summary_long <- age_summary %>%
+      tidyr::pivot_longer(cols = starts_with("Mean_"), 
+                          names_to = "Vaccination_Type", 
+                          values_to = "Percentage") %>%
+      mutate(
+        Vaccination_Type = recode(
+          Vaccination_Type,
+          "Mean_PCTCUMPCVAX" = "Fully Vaccinated",
+          "Mean_PCTCUMPVAX" = "At Least One Vaccine"
+        )
+      )
+    
+    # Plot results by age group
+    ggplot(age_summary_long, aes(x = AGE, y = Percentage, fill = Vaccination_Type)) +
+      geom_bar(stat = "identity", position = "dodge") +
+      labs(
+        title = "Vaccination Status Across Age Groups",
+        x = "Age Group",
+        y = "Percentage of Residents",
+        fill = "Vaccination Status"
+      ) +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  } else {
+    cat()
+  }
+} else {
+  cat()
+}
+
+```
