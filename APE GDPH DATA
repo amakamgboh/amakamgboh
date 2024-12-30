@@ -24,6 +24,8 @@ all_sheets <- lapply(sheet_names, function(sheet) {
 names(all_sheets) <- sheet_names
 
 # Analyze vaccination percentages across age groups
+#Answer the research question: the research question what are the percentage of fully vaccinated residents 
+##versus the percentage of residents with at least one vaccination across age groups.
 if ("AGE_BY_COUNTY" %in% names(all_sheets)) {
   age_data <- all_sheets[["AGE_BY_COUNTY"]]
   
