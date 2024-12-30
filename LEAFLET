@@ -1,0 +1,60 @@
+# Install and load required packages
+install.packages("readxl")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("ggplot2")
+install.packages("leaflet")
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(leaflet)
+
+# Read the file and extract all sheets
+data <- read_excel("Georgia_DPH_PUBLIC_Vaccination_Public_Data_in_Excel.xlsx")
+sheet_names <- excel_sheets("Georgia_DPH_PUBLIC_Vaccination_Public_Data_in_Excel.xlsx")
+
+all_sheets <- lapply(sheet_names, function(sheet) {
+  read_excel("Georgia_DPH_PUBLIC_Vaccination_Public_Data_in_Excel.xlsx", sheet = sheet)
+})
+names(all_sheets) <- sheet_names
+
+# Analyze proximity to provider locations using the COVID-19 vaccine sheet
+if ("COVID_19_Vaccine" %in% names(all_sheets)) {
+  covid_data <- all_sheets[["COVID_19_Vaccine"]]
+  
+  # Ensure relevant columns exist
+  if (all(c("Latitude", "Longitude", "Provider_Name") %in% names(covid_data))) {
+    # Filter data for valid latitude and longitude
+    covid_data <- covid_data %>%
+      filter(!is.na(Latitude) & !is.na(Longitude))
+
+    # Create an interactive map using Leaflet
+    covid_map <- leaflet(covid_data) %>%
+      addTiles() %>%
+      addCircleMarkers(
+        ~Longitude, ~Latitude,
+        radius = 5,
+        color = "blue",
+        stroke = FALSE,
+        fillOpacity = 0.7,
+        popup = ~paste(
+          "<strong>Provider Name:</strong>", Provider_Name, "<br>",
+          "<strong>Latitude:</strong>", Latitude, "<br>",
+          "<strong>Longitude:</strong>", Longitude
+        )
+      ) %>%
+      setView(
+        lng = mean(covid_data$Longitude, na.rm = TRUE),
+        lat = mean(covid_data$Latitude, na.rm = TRUE),
+        zoom = 7
+      )
+
+    # Print the map
+    print(covid_map)
+  } else {
+    cat("Required columns (Latitude, Longitude, Provider_Name) not found in 'COVID_19_Vaccine'.\n")
+  }
+} else {
+  cat("Sheet 'COVID_19_Vaccine' not found in the dataset.\n")
+}
