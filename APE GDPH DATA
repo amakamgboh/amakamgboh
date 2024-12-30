@@ -35,6 +35,18 @@ if ("AGE_BY_COUNTY" %in% names(all_sheets)) {
         PCTCUMPCVAX = as.numeric(PCTCUMPCVAX),
         PCTCUMPVAX = as.numeric(PCTCUMPVAX)
       )
+ # Filter data for Georgia counties
+  age_data <- age_data %>%
+    filter(str_detect(COUNTY, "Georgia"))
+  
+  # Ensure relevant columns exist
+  if (all(c("PCTCUMPCVAX", "PCTCUMPVAX", "AGE") %in% names(age_data))) {
+    # Convert relevant columns to numeric if necessary
+    age_data <- age_data %>%
+      mutate(
+        PCTCUMPCVAX = as.numeric(PCTCUMPCVAX),
+        PCTCUMPVAX = as.numeric(PCTCUMPVAX)
+      )
     
     # Summarize data by AGE group
     age_summary <- age_data %>%
